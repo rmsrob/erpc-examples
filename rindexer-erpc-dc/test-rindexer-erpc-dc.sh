@@ -68,7 +68,7 @@ if command -v cast > /dev/null; then
 fi
 
 echo "Making request to metrics endpoint"
-monit_res=$(curl -s http://localhost:4001/)
+monit_res=$(curl -s http://${ERPC_HOST}:${ERPC_METRICS_PORT}/)
 echo "$monit_res" | head -n 2
 echo "..."
 echo "$monit_res" | tail -n 3
