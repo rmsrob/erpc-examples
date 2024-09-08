@@ -1,0 +1,52 @@
+logLevel: warn
+
+database:
+  evmJsonRpcCache:
+    driver: redis
+    redis:
+      addr: {{ getenv "REDIS_ADDRESS" }}
+      password: {{ getenv "REDIS_PASSWORD" }}
+      db: {{ getenv "REDIS_DB" }}
+
+server:
+  listenV4: true
+  httpHostV4: "0.0.0.0"
+  listenV6: true # Enable IPv6 Ffor Redis
+  httpHostV6: "[::]"
+  httpPort: {{ getenv "ERPC_PORT" }}
+ 
+metrics:
+  enabled: true
+  listenV4: true
+  hostV4: "0.0.0.0"
+  listenV6: false
+  hostV6: "[::]"
+  port: {{ getenv "ERPC_METRICS_PORT" }}
+ 
+projects:
+  - id: main
+    upstreams:
+      - id: llamarpc-free-mainnet # Add mainnet chains of llama.com
+        endpoint: https://eth.llamarpc.com
+      {{ if getenv "ALCHEMY_API_KEY" -}}
+      - id: alchemy-multi-chain  # Add all supported chains of alchemy.com
+        endpoint: alchemy://{{ getenv "ALCHEMY_API_KEY" }}
+      {{ end -}}
+      {{ if getenv "INFURA_API_KEY" -}}
+      - id: infura-multi-chain # Add all supported chains of infura.io
+        endpoint: infura://{{ getenv "INFURA_API_KEY" }}
+      {{ end -}}
+      {{ if getenv "DRPC_API_KEY" -}}
+      - id: drpc-multi-chain # Add all supported chains of drpc.org
+        endpoint: drpc://{{ getenv "DRPC_API_KEY" }}
+      {{ end -}}
+      {{ if getenv "BLASTAPI_API_KEY" -}}
+      - id: blastapi-multi-chain # Add all supported chains of blastapi.io
+        endpoint: blastapi://{{ getenv "BLASTAPI_API_KEY" }}
+      {{ end -}}
+      {{ if getenv "ENVIO_API_KEY" -}}
+      - id: envio-multi-chain # Add all supported methods and chains of envio.dev HyperRPC
+        endpoint: envio://{{ getenv "ENVIO_API_KEY" }}
+      {{ end -}}
+      - id: envio-free-multi-chain # Add all supported chains of envio.dev HyperRPC
+        endpoint: envio://rpc.hypersync.xyz

@@ -1,0 +1,68 @@
+volumes:
+  postgres_data:
+    name: ${PGSQL_VOLUME_NAME}
+    driver: local
+  redis_data:
+    name: ${REDIS_VOLUME_NAME}
+    driver: local
+
+networks:
+  external-app-proxy:
+    name: netrunner-rindexer
+    external: true
+
+services:
+  redis:
+    container_name: ${DCKR_REDIS_NAME}
+    image: redis:7.4.0-alpine
+    restart: always
+    networks:
+      - external-app-proxy
+    ports:
+      - ${REDIS_PORT}:6379
+    command: redis-server ${REDIS_ARGS:- }
+    environment:
+      - REDIS_ARGS=${REDIS_ARGS:- }
+    volumes: 
+      - redis_data:/data
+
+  erpc:
+    depends_on:
+      redis:
+        condition: service_started
+    container_name: rindexer-erpc
+    image: ghcr.io/erpc/erpc:latest
+    platform: linux/arm64
+    restart: always
+    networks:
+      - external-app-proxy
+    ports:
+      - ${ERPC_PORT}:4000
+      - 4001:4001
+    volumes:
+      - ./erpc.yaml:/root/erpc.yaml
+
+  postgresql:
+    depends_on:
+      erpc:
+        condition: service_started
+    container_name: rindexer-postgres
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - external-app-proxy
+    shm_size: 128mb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - ${PSQL_PORT}:5432
+    healthcheck:
+      test:
+        ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB} -q']
+      interval: 5s
+      timeout: 10s
+      retries: 10

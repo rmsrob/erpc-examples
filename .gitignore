@@ -1,0 +1,5 @@
+.idea
+.env
+erpc.yaml
+erpc.yml
+.DS_Store
