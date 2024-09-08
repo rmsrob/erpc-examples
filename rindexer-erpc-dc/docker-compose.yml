@@ -32,13 +32,12 @@ services:
         condition: service_started
     container_name: rindexer-erpc
     image: ghcr.io/erpc/erpc:latest
-    platform: linux/arm64
     restart: always
     networks:
       - external-app-proxy
     ports:
       - ${ERPC_PORT}:4000
-      - 4001:4001
+      - ${ERPC_METRICS_PORT}:4001
     volumes:
       - ./erpc.yaml:/root/erpc.yaml
 

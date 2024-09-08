@@ -67,4 +67,10 @@ if command -v cast > /dev/null; then
     echo "CAST_BALNCE for 0xf70b...7217: $CAST_BALNCE ETH\n"
 fi
 
+echo "Making request to metrics endpoint"
+monit_res=$(curl -s http://localhost:4001/)
+echo "$monit_res" | head -n 2
+echo "..."
+echo "$monit_res" | tail -n 3
+echo ""
 echo "All requests completed."
