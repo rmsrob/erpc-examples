@@ -1,8 +1,8 @@
 #!/bin/bash
 
-## This script will work if launched from the Makefile in the root of the repository.
-## As it uses the environment variables set in the Makefile.
-## It will make requests to the eRPC server and the Rindexer GraphQL server.
+# This script will work if launched from the Makefile in the root of the repository.
+# As it uses the environment variables set in the Makefile.
+# It will make requests to the eRPC server and the Rindexer GraphQL server.
 
 eRPC_MAINNET=http://${ERPC_HOST}:${ERPC_PORT}/main/evm/1
 
@@ -72,5 +72,61 @@ monit_res=$(curl -s http://${ERPC_HOST}:${ERPC_METRICS_PORT}/)
 echo "$monit_res" | head -n 2
 echo "..."
 echo "$monit_res" | tail -n 3
+echo ""
+
+# Check if the Redis container is running and operating correctly.
+echo "Checking the Redis connection..."
+
+if docker exec "$DCKR_REDIS_NAME" redis-cli -a "$REDIS_PASSWORD" ping 2>/dev/null | grep -q "PONG"; then
+    echo "-> PONG - Redis is up and running with authentication."
+else
+    echo "-> Failed to connect to Redis or received unexpected response."
+    exit 1
+fi
+
+docker exec "$DCKR_REDIS_NAME" redis-cli -a "$REDIS_PASSWORD" set testkey "testvalue" > /dev/null 2>&1
+VALUE=$(docker exec "$DCKR_REDIS_NAME" redis-cli -a "$REDIS_PASSWORD" get testkey 2>/dev/null)
+
+if [ "$VALUE" == "testvalue" ]; then
+    echo "-> $VALUE - Redis is working. Test key-value pair set and retrieved successfully."
+else
+    echo "-> Failed to set or retrieve key-value pair in Redis."
+    exit 1
+fi
+
+echo ""
+
+# Query to check the number of entries in the approval table
+QUERY="
+SELECT
+  'approval' AS table_name,
+  COUNT(*) AS row_count
+FROM
+  rindexererpctest_rocket_pool_eth.approval
+UNION ALL
+SELECT
+  'transfer' AS table_name,
+  COUNT(*) AS row_count
+FROM
+  rindexererpctest_rocket_pool_eth.transfer;
+"
+
+echo "Checking the number of entries in tables..."
+
+if ! command -v psql > /dev/null 2>&1; then
+    echo "psql command not found. Can't run the query."
+    exit 1
+else
+    # Run the query
+    PGPASSWORD="$POSTGRES_PASSWORD" psql -h "$PSQL_HOST" -p "$PSQL_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "$QUERY"
+    
+    if [ $? -eq 0 ]; then
+        echo "Query executed successfully."
+    else
+        echo "Failed to execute query."
+        exit 1
+    fi
+fi
+
 echo ""
 echo "All requests completed."
