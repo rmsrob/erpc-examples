@@ -10,7 +10,6 @@ This stack do not contain eRPC endpoint optimisations or rate limiting, it has a
 ```sh
 cd rindexer-erpc-dc
 make start
-make test-erpc-compose
 ```
 
 | Service             | Endpoint                            |
@@ -20,7 +19,7 @@ make test-erpc-compose
 | **GraphQL API**      | [http://localhost:3001/graphql](http://localhost:3001/graphql) |
 | **GraphQL Playground** | [http://localhost:3001/playground](http://localhost:3001/playground) |
 
-### To test the endpoints with queries.
+### To test the endpoints and db with queries.
 ```sh
 make test-erpc-compose
 ```
